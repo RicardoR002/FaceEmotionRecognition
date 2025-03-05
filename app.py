@@ -4,7 +4,7 @@ import numpy as np
 from fer import FER
 from PIL import Image
 import io
-st.cache_data.clear()
+
 def process_image(image, detector, show_boxes=True, min_confidence=0.5):
     """Process the image and detect emotions"""
     try:
