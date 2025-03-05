@@ -5,14 +5,6 @@ from fer import FER
 from PIL import Image
 import io
 
-# Set page config and add logo
-st.set_page_config(page_title="Face Emotion Recognition App", page_icon="😺", layout="wide")
-
-# Display logo at the top
-st.image("https://drive.google.com/file/d/1yDcJ3Zy99AFq-Eo1OrMvwIxlLB__fpZU/preview", width=150)
-
-st.title("Upload an image or use your webcam to get started!")
-
 def process_image(image, detector, show_boxes=True, min_confidence=0.5):
     """Process the image and detect emotions"""
     try:
