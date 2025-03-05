@@ -7,29 +7,44 @@ import io
 
 def process_image(image, detector, show_boxes=True, min_confidence=0.5):
     """Process the image and detect emotions"""
-    # Convert PIL Image to OpenCV format
-    if isinstance(image, Image.Image):
-        image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-    
-    # Detect emotions
-    emotions = detector.detect_emotions(image)
-    
-    # Draw boxes and labels
-    for emotion in emotions:
-        if emotion['score'] >= min_confidence:
-            x, y, w, h = emotion['box']
-            if show_boxes:
-                cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+    try:
+        # Convert PIL Image to OpenCV format
+        if isinstance(image, Image.Image):
+            image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        
+        # Detect emotions
+        emotions = detector.detect_emotions(image)
+        
+        if not emotions:
+            st.warning("No faces detected in the image. Please try another image.")
+            return image, []
+        
+        # Draw boxes and labels
+        for face in emotions:
+            box = face.get('box', None)
+            emotions_dict = face.get('emotions', {})
             
-            # Get dominant emotion
-            dominant_emotion = max(emotion['emotions'].items(), key=lambda x: x[1])[0]
-            confidence = emotion['emotions'][dominant_emotion]
-            
-            # Add label
-            label = f"{dominant_emotion}: {confidence:.2f}"
-            cv2.putText(image, label, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+            if box and emotions_dict:
+                x, y, w, h = box
+                
+                # Draw bounding box if enabled
+                if show_boxes:
+                    cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                
+                # Get dominant emotion
+                dominant_emotion = max(emotions_dict.items(), key=lambda x: x[1])
+                emotion_name, confidence = dominant_emotion
+                
+                if confidence >= min_confidence:
+                    # Add label
+                    label = f"{emotion_name}: {confidence:.2f}"
+                    cv2.putText(image, label, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+        
+        return image, emotions
     
-    return image, emotions
+    except Exception as e:
+        st.error(f"Error in emotion detection: {str(e)}")
+        return image, []
 
 def main():
     st.set_page_config(page_title="Face Emotion Detection", layout="wide")
@@ -76,11 +91,13 @@ def main():
                 if show_detailed and emotions:
                     with col2:
                         st.subheader("Detailed Analysis")
-                        for i, emotion in enumerate(emotions):
-                            if emotion['score'] >= min_confidence:
+                        for i, face in enumerate(emotions):
+                            emotions_dict = face.get('emotions', {})
+                            if emotions_dict:
                                 st.write(f"Face {i+1}:")
-                                for emotion_name, score in emotion['emotions'].items():
-                                    st.progress(score, text=f"{emotion_name}: {score:.2f}")
+                                for emotion_name, score in emotions_dict.items():
+                                    if score >= min_confidence:
+                                        st.progress(score, text=f"{emotion_name}: {score:.2f}")
                                 st.markdown("---")
                 
             except Exception as e:
@@ -107,11 +124,13 @@ def main():
                 if show_detailed and emotions:
                     with col2:
                         st.subheader("Detailed Analysis")
-                        for i, emotion in enumerate(emotions):
-                            if emotion['score'] >= min_confidence:
+                        for i, face in enumerate(emotions):
+                            emotions_dict = face.get('emotions', {})
+                            if emotions_dict:
                                 st.write(f"Face {i+1}:")
-                                for emotion_name, score in emotion['emotions'].items():
-                                    st.progress(score, text=f"{emotion_name}: {score:.2f}")
+                                for emotion_name, score in emotions_dict.items():
+                                    if score >= min_confidence:
+                                        st.progress(score, text=f"{emotion_name}: {score:.2f}")
                                 st.markdown("---")
                 
             except Exception as e:
